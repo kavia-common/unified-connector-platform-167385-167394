@@ -34,7 +34,11 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.buckets: Dict[str, Deque[float]] = defaultdict(deque)
 
     async def dispatch(self, request: Request, call_next):
-        key = self.key_func(request.scope)
+        # Generate a key for this request; never allow failures here to break the request.
+        try:
+            key = self.key_func(request.scope)
+        except Exception:
+            key = "ip:unknown"
         now = time.time()
 
         bucket = self.buckets[key]
