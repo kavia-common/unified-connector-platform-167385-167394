@@ -1,0 +1,1266 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Unified Connector Platform API",
+    "description": "A unified API to authenticate, connect, and interact with third-party providers (e.g., Jira, Confluence) via API Key or OAuth, manage connectors per tenant, operate on provider resources, leverage LLM tools proxy, and manage a connector registry.",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/auth/api-key": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Authenticate with API Key",
+        "description": "Authenticate a tenant with a provider using API key.\n\nParameters:\n- tenant_id: Tenant performing authentication\n- provider: Provider name\n- api_key: Provider API key\n- label: Optional label for token\n\nReturns:\n- token_id referencing the stored token",
+        "operationId": "auth_api_key_auth_api_key_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/APIKeyAuthRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/APIKeyAuthResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/oauth/init": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Initiate OAuth flow",
+        "description": "Initiate an OAuth flow for a provider.\n\nThe response contains an authorization_url and a state value.\nThe client should redirect the user-agent to the authorization_url.",
+        "operationId": "oauth_init_auth_oauth_init_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OAuthInitRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthInitResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/oauth/callback": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Complete OAuth callback",
+        "description": "Complete OAuth flow by exchanging authorization code for an access token.\n\nParameters:\n- tenant_id, provider, code, state\n\nReturns:\n- token_id referencing the stored token",
+        "operationId": "oauth_callback_auth_oauth_callback_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OAuthCallbackRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthCallbackResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/connectors": {
+      "get": {
+        "tags": [
+          "Connectors"
+        ],
+        "summary": "List connectors",
+        "description": "List connectors. Optionally filter by tenant_id.",
+        "operationId": "list_connectors_connectors_get",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by tenant_id",
+              "title": "Tenant Id"
+            },
+            "description": "Filter by tenant_id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectorListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Connectors"
+        ],
+        "summary": "Create connector",
+        "description": "Create a connector record. Attach token_id if already stored for this tenant/provider via a previous auth flow (out of scope for this stub).",
+        "operationId": "create_connector_connectors_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConnectorCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/connectors/{connector_id}": {
+      "get": {
+        "tags": [
+          "Connectors"
+        ],
+        "summary": "Get connector",
+        "description": "Get a connector by ID.",
+        "operationId": "get_connector_connectors__connector_id__get",
+        "parameters": [
+          {
+            "name": "connector_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Connector Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Connectors"
+        ],
+        "summary": "Update connector",
+        "description": "Update connector label/config.",
+        "operationId": "update_connector_connectors__connector_id__patch",
+        "parameters": [
+          {
+            "name": "connector_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Connector Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConnectorUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Connectors"
+        ],
+        "summary": "Delete connector",
+        "description": "Delete a connector by ID.",
+        "operationId": "delete_connector_connectors__connector_id__delete",
+        "parameters": [
+          {
+            "name": "connector_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Connector Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Delete Connector Connectors  Connector Id  Delete"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/llm-proxy": {
+      "post": {
+        "tags": [
+          "LLM Proxy"
+        ],
+        "summary": "Invoke LLM Tool",
+        "description": "Invoke a provider tool through the unified proxy.\n\nParameters:\n- provider: Target provider\n- tool: Tool name (e.g., search_projects)\n- tenant_id: Tenant context\n- connector_id: Optional connector ID to use\n- arguments: Tool arguments\n\nReturns:\n- Tool result payload",
+        "operationId": "invoke_tool_llm_proxy_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LLMToolInvocation"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LLMToolResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/registry": {
+      "get": {
+        "tags": [
+          "Admin - Registry"
+        ],
+        "summary": "List registry providers",
+        "description": "List all providers in the registry.",
+        "operationId": "list_registry_admin_registry_get",
+        "parameters": [
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistryListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Admin - Registry"
+        ],
+        "summary": "Upsert registry provider",
+        "description": "Create or update a provider registry entry.",
+        "operationId": "upsert_registry_admin_registry_post",
+        "parameters": [
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegistryUpsertRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistryConnector"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/registry/{provider}": {
+      "get": {
+        "tags": [
+          "Admin - Registry"
+        ],
+        "summary": "Get registry provider",
+        "description": "Get a specific provider registry entry.",
+        "operationId": "get_registry_provider_admin_registry__provider__get",
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Provider"
+            }
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistryConnector"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Admin - Registry"
+        ],
+        "summary": "Delete registry provider",
+        "description": "Delete a provider registry entry.",
+        "operationId": "delete_registry_provider_admin_registry__provider__delete",
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Provider"
+            }
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Delete Registry Provider Admin Registry  Provider  Delete"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "summary": "Health Check",
+        "description": "Health check endpoint.\nReturns status and version info.",
+        "operationId": "health_check__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/docs/websocket-usage": {
+      "get": {
+        "tags": [
+          "Documentation"
+        ],
+        "summary": "WebSocket Usage",
+        "description": "This project currently exposes only HTTP endpoints. If WebSocket endpoints are added, usage notes will appear here.",
+        "operationId": "websocket_usage_docs_websocket_usage_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "APIKeyAuthRequest": {
+        "properties": {
+          "tenant_id": {
+            "type": "string",
+            "title": "Tenant Id",
+            "description": "Unique identifier of the tenant"
+          },
+          "provider": {
+            "type": "string",
+            "title": "Provider",
+            "description": "Provider name (e.g., jira, confluence)"
+          },
+          "api_key": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Api Key",
+            "description": "API key for the provider"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label",
+            "description": "Optional label for this key"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_id",
+          "provider",
+          "api_key"
+        ],
+        "title": "APIKeyAuthRequest"
+      },
+      "APIKeyAuthResponse": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Result message"
+          },
+          "provider": {
+            "type": "string",
+            "title": "Provider",
+            "description": "Provider name"
+          },
+          "tenant_id": {
+            "type": "string",
+            "title": "Tenant Id",
+            "description": "Tenant"
+          },
+          "token_id": {
+            "type": "string",
+            "title": "Token Id",
+            "description": "Reference ID of stored token"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message",
+          "provider",
+          "tenant_id",
+          "token_id"
+        ],
+        "title": "APIKeyAuthResponse"
+      },
+      "ConnectorCreateRequest": {
+        "properties": {
+          "provider": {
+            "type": "string",
+            "title": "Provider",
+            "description": "Provider name (e.g., jira)"
+          },
+          "auth_method": {
+            "type": "string",
+            "title": "Auth Method",
+            "description": "Auth method: api_key or oauth"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label",
+            "description": "Optional connector label"
+          },
+          "config": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Config",
+            "description": "Provider config"
+          },
+          "tenant_id": {
+            "type": "string",
+            "title": "Tenant Id",
+            "description": "Unique identifier of the tenant"
+          }
+        },
+        "type": "object",
+        "required": [
+          "provider",
+          "auth_method",
+          "tenant_id"
+        ],
+        "title": "ConnectorCreateRequest"
+      },
+      "ConnectorListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ConnectorResponse"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "List of connectors"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "Total count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "ConnectorListResponse"
+      },
+      "ConnectorResponse": {
+        "properties": {
+          "provider": {
+            "type": "string",
+            "title": "Provider",
+            "description": "Provider name (e.g., jira)"
+          },
+          "auth_method": {
+            "type": "string",
+            "title": "Auth Method",
+            "description": "Auth method: api_key or oauth"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label",
+            "description": "Optional connector label"
+          },
+          "config": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Config",
+            "description": "Provider config"
+          },
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Connector unique identifier"
+          },
+          "tenant_id": {
+            "type": "string",
+            "title": "Tenant Id",
+            "description": "Tenant"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "Connection status (e.g., connected, error)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "provider",
+          "auth_method",
+          "id",
+          "tenant_id",
+          "status"
+        ],
+        "title": "ConnectorResponse"
+      },
+      "ConnectorUpdateRequest": {
+        "properties": {
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label",
+            "description": "Label"
+          },
+          "config": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Config",
+            "description": "Config"
+          }
+        },
+        "type": "object",
+        "title": "ConnectorUpdateRequest"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "LLMToolInvocation": {
+        "properties": {
+          "tool": {
+            "type": "string",
+            "title": "Tool",
+            "description": "Tool name (e.g., search_projects)"
+          },
+          "provider": {
+            "type": "string",
+            "title": "Provider",
+            "description": "Provider name"
+          },
+          "tenant_id": {
+            "type": "string",
+            "title": "Tenant Id",
+            "description": "Tenant"
+          },
+          "connector_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Connector Id",
+            "description": "Optional connector to use"
+          },
+          "arguments": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Arguments",
+            "description": "Tool args"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tool",
+          "provider",
+          "tenant_id"
+        ],
+        "title": "LLMToolInvocation"
+      },
+      "LLMToolResponse": {
+        "properties": {
+          "provider": {
+            "type": "string",
+            "title": "Provider",
+            "description": "Provider"
+          },
+          "tool": {
+            "type": "string",
+            "title": "Tool",
+            "description": "Tool invoked"
+          },
+          "result": {
+            "title": "Result",
+            "description": "Result payload"
+          }
+        },
+        "type": "object",
+        "required": [
+          "provider",
+          "tool",
+          "result"
+        ],
+        "title": "LLMToolResponse"
+      },
+      "OAuthCallbackRequest": {
+        "properties": {
+          "tenant_id": {
+            "type": "string",
+            "title": "Tenant Id",
+            "description": "Tenant"
+          },
+          "provider": {
+            "type": "string",
+            "title": "Provider",
+            "description": "Provider"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code",
+            "description": "Authorization code from provider"
+          },
+          "state": {
+            "type": "string",
+            "title": "State",
+            "description": "State used in initiation"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_id",
+          "provider",
+          "code",
+          "state"
+        ],
+        "title": "OAuthCallbackRequest"
+      },
+      "OAuthCallbackResponse": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Result"
+          },
+          "provider": {
+            "type": "string",
+            "title": "Provider",
+            "description": "Provider"
+          },
+          "tenant_id": {
+            "type": "string",
+            "title": "Tenant Id",
+            "description": "Tenant"
+          },
+          "token_id": {
+            "type": "string",
+            "title": "Token Id",
+            "description": "Stored token reference"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message",
+          "provider",
+          "tenant_id",
+          "token_id"
+        ],
+        "title": "OAuthCallbackResponse"
+      },
+      "OAuthInitRequest": {
+        "properties": {
+          "tenant_id": {
+            "type": "string",
+            "title": "Tenant Id",
+            "description": "Unique identifier of the tenant"
+          },
+          "provider": {
+            "type": "string",
+            "title": "Provider",
+            "description": "Provider name"
+          },
+          "redirect_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Redirect Path",
+            "description": "Path on SITE_URL for callback",
+            "default": "/oauth/callback"
+          },
+          "scope": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope",
+            "description": "Optional scopes list"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State",
+            "description": "Optional opaque state"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tenant_id",
+          "provider"
+        ],
+        "title": "OAuthInitRequest"
+      },
+      "OAuthInitResponse": {
+        "properties": {
+          "authorization_url": {
+            "type": "string",
+            "maxLength": 2083,
+            "minLength": 1,
+            "format": "uri",
+            "title": "Authorization Url",
+            "description": "Provider authorization URL"
+          },
+          "state": {
+            "type": "string",
+            "title": "State",
+            "description": "State for CSRF protection"
+          }
+        },
+        "type": "object",
+        "required": [
+          "authorization_url",
+          "state"
+        ],
+        "title": "OAuthInitResponse"
+      },
+      "RegistryConnector": {
+        "properties": {
+          "provider": {
+            "type": "string",
+            "title": "Provider",
+            "description": "Provider"
+          },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name",
+            "description": "Display name"
+          },
+          "auth_methods": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Auth Methods",
+            "description": "Supported auth methods"
+          },
+          "metadata": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Metadata",
+            "description": "Extra metadata"
+          }
+        },
+        "type": "object",
+        "required": [
+          "provider",
+          "display_name",
+          "auth_methods"
+        ],
+        "title": "RegistryConnector"
+      },
+      "RegistryListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RegistryConnector"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "Registered connectors"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "Total count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "RegistryListResponse"
+      },
+      "RegistryUpsertRequest": {
+        "properties": {
+          "provider": {
+            "type": "string",
+            "title": "Provider",
+            "description": "Provider"
+          },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name",
+            "description": "Display name"
+          },
+          "auth_methods": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Auth Methods",
+            "description": "Supported auth methods"
+          },
+          "metadata": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Metadata",
+            "description": "Extra metadata"
+          }
+        },
+        "type": "object",
+        "required": [
+          "provider",
+          "display_name",
+          "auth_methods"
+        ],
+        "title": "RegistryUpsertRequest"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}
