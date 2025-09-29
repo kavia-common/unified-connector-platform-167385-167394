@@ -3,7 +3,7 @@ OpenAPI utilities and tags for the Unified Connector Platform API.
 """
 
 from fastapi import FastAPI
-from fastapi.openapi.utils import get_openapi as _get_openapi
+from fastapi.openapi.utils import get_openapi as _get_openapi  # stable across FastAPI 0.95+ and 0.11x
 
 openapi_tags = [
     {

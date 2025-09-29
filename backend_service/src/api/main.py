@@ -93,8 +93,10 @@ def create_app() -> FastAPI:
         ),
         version="1.0.0",
         openapi_tags=openapi_tags,
+        # Explicitly set docs and redoc URLs; FastAPI will mount Swagger UI at /docs using openapi_url
         docs_url="/docs",
         redoc_url="/redoc",
+        openapi_url="/openapi.json",
         lifespan=lifespan,
     )
 
@@ -147,19 +149,29 @@ def create_app() -> FastAPI:
         return {"message": "No WebSocket endpoints available at this time."}
 
     # Replace default openapi generator to include custom metadata using a safe function
-    def _custom_openapi():
+    def _custom_openapi() -> dict:
+        """
+        Build OpenAPI schema once and cache it on the app instance.
+
+        The function signature must be a zero-arg callable assigned to `app.openapi`,
+        as expected by FastAPI internals when serving /openapi.json and /docs.
+        """
         # Cache schema on app state to avoid recomputation and potential race conditions
-        if getattr(app, "openapi_schema", None):
-            return app.openapi_schema
+        existing = getattr(app, "openapi_schema", None)
+        if existing:
+            return existing
         try:
             schema = get_openapi_schema(app)
             app.openapi_schema = schema
             return schema
-        except Exception:
-            # If OpenAPI generation fails, avoid crashing the app; return a minimal schema
-            # The global exception handler would otherwise turn this into a 500.
-            return {"openapi": "3.1.0", "info": {"title": app.title, "version": app.version}, "paths": {}}
+        except Exception as e:
+            # Log and fall back to a minimal schema so that Swagger UI still loads
+            logging.getLogger("uvicorn.error").exception("OpenAPI generation failed: %s", e)
+            minimal = {"openapi": "3.1.0", "info": {"title": app.title, "version": app.version}, "paths": {}}
+            app.openapi_schema = minimal
+            return minimal
 
+    # Assign custom generator
     app.openapi = _custom_openapi
 
     return app

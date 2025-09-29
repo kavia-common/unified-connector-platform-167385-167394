@@ -50,8 +50,12 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
         bucket.append(now)
         response = await call_next(request)
-        # Could add headers with rate limit info
-        response.headers["X-RateLimit-Limit"] = str(self.requests)
-        response.headers["X-RateLimit-Remaining"] = str(max(0, self.requests - len(bucket)))
-        response.headers["X-RateLimit-Window"] = str(self.window)
+        # Could add headers with rate limit info; guard against responses without headers (e.g., StreamingResponse closed)
+        try:
+            response.headers["X-RateLimit-Limit"] = str(self.requests)
+            response.headers["X-RateLimit-Remaining"] = str(max(0, self.requests - len(bucket)))
+            response.headers["X-RateLimit-Window"] = str(self.window)
+        except Exception:
+            # Do not fail the request if headers cannot be set
+            pass
         return response

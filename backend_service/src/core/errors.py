@@ -61,6 +61,8 @@ def register_exception_handlers(app: FastAPI) -> None:
         - Returns generic message by default to avoid leaking details.
         - Adds an X-Request-ID header for correlation.
         - If ENV=development, include a brief debug field.
+        Note: /openapi.json and /docs should not be blocked by handler failures;
+        upstream fixes ensure OpenAPI generation safely falls back.
         """
         request_id = str(uuid.uuid4())
         settings = get_settings()
