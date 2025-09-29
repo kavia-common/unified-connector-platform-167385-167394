@@ -1,0 +1,4 @@
+{
+    "command": "pytest",
+    "working_directory": "/home/kavia/workspace/code-generation/unified-connector-platform-167385-167394/backend_service"
+}
