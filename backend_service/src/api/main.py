@@ -25,6 +25,8 @@ Environment configuration:
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
+import logging
 
 from src.core.config import get_settings
 from src.core.errors import register_exception_handlers
@@ -54,6 +56,34 @@ def create_app() -> FastAPI:
         FastAPI: Configured app instance with routers, middleware, and docs.
     """
     settings = get_settings()
+
+    # Define an async lifespan handler for robust startup/shutdown.
+    # This is the correct place to initialize external resources (e.g., MongoDB, Redis).
+    # It must never prevent OpenAPI generation or docs rendering; any failure is logged.
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        logger = logging.getLogger("uvicorn.error")
+        # Example: initialize database clients here (currently using in-memory stubs)
+        try:
+            # Placeholder for future DB init; keep non-blocking and optional.
+            # e.g., app.state.db = AsyncIOMotorClient(MONGO_URL)  # do not run until configured
+            app.state.db = None
+            app.state.ready = True
+        except Exception as e:
+            # Log and continue so that /docs still works even if DB is unavailable
+            logger.error("Startup initialization failed: %s", e)
+            app.state.ready = False
+
+        try:
+            yield
+        finally:
+            # Clean up resources if any were initialized
+            try:
+                if getattr(app.state, "db", None) and hasattr(app.state.db, "close"):
+                    app.state.db.close()
+            except Exception as e:
+                logger.warning("Shutdown cleanup error: %s", e)
+
     app = FastAPI(
         title="Unified Connector Platform API",
         description=(
@@ -65,6 +95,7 @@ def create_app() -> FastAPI:
         openapi_tags=openapi_tags,
         docs_url="/docs",
         redoc_url="/redoc",
+        lifespan=lifespan,
     )
 
     # CORS
