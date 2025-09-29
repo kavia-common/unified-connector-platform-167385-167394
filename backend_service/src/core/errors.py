@@ -5,6 +5,8 @@ Error types and handlers for consistent API responses.
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
+import uuid
+from src.core.config import get_settings
 
 
 class ErrorResponse(BaseModel):
@@ -53,9 +55,18 @@ def register_exception_handlers(app: FastAPI) -> None:
         )
 
     @app.exception_handler(Exception)
-    async def unhandled_error_handler(_: Request, exc: Exception):
-        # In production, avoid leaking details. Here we keep a generic error.
-        return JSONResponse(
-            status_code=500,
-            content=ErrorResponse(detail="Internal Server Error", code="server_error").model_dump(),
-        )
+    async def unhandled_error_handler(request: Request, exc: Exception):
+        """
+        Last-resort handler for unhandled exceptions.
+        - Returns generic message by default to avoid leaking details.
+        - Adds an X-Request-ID header for correlation.
+        - If ENV=development, include a brief debug field.
+        """
+        request_id = str(uuid.uuid4())
+        settings = get_settings()
+        payload = ErrorResponse(detail="Internal Server Error", code="server_error").model_dump()
+        if (settings.ENV or "").lower() in ("dev", "development"):
+            payload["debug"] = {"path": request.url.path, "method": request.method}
+        response = JSONResponse(status_code=500, content=payload)
+        response.headers["X-Request-ID"] = request_id
+        return response

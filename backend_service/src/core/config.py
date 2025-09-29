@@ -56,8 +56,12 @@ class Settings(BaseModel):
         """
 
         def key_func(scope: dict) -> str:
-            client = scope.get("client") or ("", 0)
-            return f"ip:{client[0]}"
+            client = scope.get("client")
+            try:
+                host = client[0] if client and isinstance(client, (tuple, list)) and len(client) > 0 else "unknown"
+            except Exception:
+                host = "unknown"
+            return f"ip:{host}"
 
         return key_func
 

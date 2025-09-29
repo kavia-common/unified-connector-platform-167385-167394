@@ -35,6 +35,15 @@ from src.routers.llm_proxy import router as llm_proxy_router
 from src.routers.admin_registry import router as admin_registry_router
 from src.core.openapi import get_openapi_schema, openapi_tags
 
+# Ensure .env is loaded so environment variables are available in all contexts.
+# This is safe even if .env does not exist.
+try:
+    from dotenv import load_dotenv  # python-dotenv is in requirements
+    load_dotenv()
+except Exception:
+    # Do not fail app startup if dotenv is unavailable at runtime
+    pass
+
 
 # PUBLIC_INTERFACE
 def create_app() -> FastAPI:
@@ -106,8 +115,21 @@ def create_app() -> FastAPI:
         """
         return {"message": "No WebSocket endpoints available at this time."}
 
-    # Replace default openapi generator to include custom metadata
-    app.openapi = lambda: get_openapi_schema(app)
+    # Replace default openapi generator to include custom metadata using a safe function
+    def _custom_openapi():
+        # Cache schema on app state to avoid recomputation and potential race conditions
+        if getattr(app, "openapi_schema", None):
+            return app.openapi_schema
+        try:
+            schema = get_openapi_schema(app)
+            app.openapi_schema = schema
+            return schema
+        except Exception:
+            # If OpenAPI generation fails, avoid crashing the app; return a minimal schema
+            # The global exception handler would otherwise turn this into a 500.
+            return {"openapi": "3.1.0", "info": {"title": app.title, "version": app.version}, "paths": {}}
+
+    app.openapi = _custom_openapi
 
     return app
 
