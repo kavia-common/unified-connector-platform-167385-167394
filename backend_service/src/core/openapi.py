@@ -32,14 +32,24 @@ openapi_tags = [
 def get_openapi_schema(app: FastAPI):
     """
     Build and memoize the OpenAPI schema with custom metadata.
+
+    Note:
+        Use getattr to safely access app.openapi_schema; directly referencing it
+        before initialization can raise AttributeError and break /openapi.json and /docs.
     """
-    if app.openapi_schema:
-        return app.openapi_schema
+    # Safely check cached schema
+    cached = getattr(app, "openapi_schema", None)
+    if cached:
+        return cached
+
+    # Generate new schema
     openapi_schema = _get_openapi(
         title=app.title,
         version=app.version,
         description=app.description,
         routes=app.routes,
     )
+
+    # Cache and return
     app.openapi_schema = openapi_schema
     return app.openapi_schema
