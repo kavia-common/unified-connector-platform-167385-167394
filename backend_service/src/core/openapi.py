@@ -48,6 +48,7 @@ def get_openapi_schema(app: FastAPI):
         version=app.version,
         description=app.description,
         routes=app.routes,
+        tags=openapi_tags,
     )
 
     # Cache and return

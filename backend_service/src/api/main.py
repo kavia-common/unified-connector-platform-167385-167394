@@ -35,7 +35,7 @@ from src.routers.auth import router as auth_router
 from src.routers.connectors import router as connectors_router
 from src.routers.llm_proxy import router as llm_proxy_router
 from src.routers.admin_registry import router as admin_registry_router
-from src.core.openapi import get_openapi_schema, openapi_tags
+from src.core.openapi import get_openapi_schema
 
 # Ensure .env is loaded so environment variables are available in all contexts.
 # This is safe even if .env does not exist.
@@ -92,12 +92,12 @@ def create_app() -> FastAPI:
             "operate on provider resources, leverage LLM tools proxy, and manage a connector registry."
         ),
         version="1.0.0",
-        openapi_tags=openapi_tags,
         # Explicitly set docs and redoc URLs; FastAPI will mount Swagger UI at /docs using openapi_url
         docs_url="/docs",
         redoc_url="/redoc",
         openapi_url="/openapi.json",
         lifespan=lifespan,
+        swagger_ui_parameters={"displayRequestDuration": True},
     )
 
     # CORS
