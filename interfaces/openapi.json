@@ -7,6 +7,24 @@
   },
   "paths": {
     "/auth/api-key": {
+      "get": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "API Key endpoint info",
+        "description": "Diagnostic endpoint for /auth/api-key.\n\nUse POST /auth/api-key to submit credentials.\nThis GET exists to help proxy checks and avoid 404 confusion during integration.",
+        "operationId": "auth_api_key_info_auth_api_key_get",
+        "responses": {
+          "200": {
+            "description": "Endpoint available",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      },
       "post": {
         "tags": [
           "Authentication"
