@@ -114,7 +114,8 @@ def create_app() -> FastAPI:
         RateLimitMiddleware,
         requests=settings.RATE_LIMIT_REQUESTS,
         window_seconds=settings.RATE_LIMIT_WINDOW_SECONDS,
-        key_func=settings.rate_limit_key_func,
+        # Pass the actual callable by invoking the factory method
+        key_func=settings.rate_limit_key_func(),
     )
 
     # Register exception handlers
