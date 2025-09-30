@@ -1262,5 +1262,27 @@
         "title": "ValidationError"
       }
     }
-  }
+  },
+  "tags": [
+    {
+      "name": "Authentication",
+      "description": "Authentication flows including API key and OAuth."
+    },
+    {
+      "name": "Connectors",
+      "description": "CRUD operations and management of connectors per tenant."
+    },
+    {
+      "name": "LLM Proxy",
+      "description": "Proxy LLM requests to provider tools safely."
+    },
+    {
+      "name": "Admin - Registry",
+      "description": "Admin-only endpoints to manage connector registry."
+    },
+    {
+      "name": "Documentation",
+      "description": "Documentation helper endpoints."
+    }
+  ]
 }
