@@ -25,6 +25,18 @@ CORS configuration:
 - CORS is enabled with CORSMiddleware and controlled via the CORS_ALLOW_ORIGINS environment variable (comma-separated list or "*" for all in development).
 - Set CORS_ALLOW_ORIGINS to your frontend origin(s), e.g., http://localhost:3000.
 
+OAuth redirect_uri configuration (important):
+- The backend constructs redirect_uri as: `${SITE_URL}${redirect_path}` where:
+  - SITE_URL comes from the environment (Settings.SITE_URL).
+  - redirect_path defaults to `/oauth/callback` (frontend passes this explicitly).
+- To avoid OAuth errors, Jira's application link redirect URL must exactly match:
+  - Protocol, host (and port), and path.
+- Example for this environment:
+  - If backend is reachable at: https://vscode-internal-32364-beta.beta01.cloud.kavia.ai:3001
+  - Set: SITE_URL=https://vscode-internal-32364-beta.beta01.cloud.kavia.ai:3001
+  - Then redirect_uri becomes: https://vscode-internal-32364-beta.beta01.cloud.kavia.ai:3001/oauth/callback
+  - Register exactly that URL in Jira.
+
 Testing POST /auth/api-key:
 - Example curl:
   curl -X POST "http://localhost:3001/auth/api-key" \
