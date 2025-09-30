@@ -121,6 +121,21 @@ def create_app() -> FastAPI:
     # Register exception handlers
     register_exception_handlers(app)
 
+    # Log route presence for /auth/api-key
+    try:
+        # Confirm that the route is present in the app's router table
+        found_api_key_route = any(
+            getattr(getattr(route, "methods", set()), "intersection", lambda x: set())({"POST"})
+            and getattr(route, "path", "") == "/auth/api-key"
+            for route in app.routes
+        )
+        logging.getLogger("uvicorn.access").info(
+            "Route check: POST /auth/api-key %s",
+            "present" if found_api_key_route else "NOT found (router may add later)"
+        )
+    except Exception as _e:
+        logging.getLogger("uvicorn.error").warning("Route presence check failed: %s", _e)
+
     # Routers
     app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
     app.include_router(connectors_router, prefix="/connectors", tags=["Connectors"])
