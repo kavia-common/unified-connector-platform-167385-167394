@@ -60,6 +60,27 @@ def auth_api_key(payload: APIKeyAuthRequest):
         raise AppError(detail=str(e), code="invalid_credentials", status_code=401)
 
 
+@router.get(
+    "/api-key",
+    summary="API Key endpoint info",
+    responses={200: {"description": "Endpoint available"}},
+)
+def auth_api_key_info():
+    """
+    Diagnostic endpoint for /auth/api-key.
+
+    Use POST /auth/api-key to submit credentials.
+    This GET exists to help proxy checks and avoid 404 confusion during integration.
+    """
+    settings = get_settings()
+    return {
+        "message": "Use POST /auth/api-key to authenticate with an API key.",
+        "docs": "/docs",
+        "openapi": "/openapi.json",
+        "site_url": settings.SITE_URL,
+    }
+
+
 @router.post(
     "/oauth/init",
     summary="Initiate OAuth flow",
