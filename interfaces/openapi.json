@@ -677,6 +677,26 @@
           }
         }
       }
+    },
+    "/docs/backend-help": {
+      "get": {
+        "tags": [
+          "Documentation"
+        ],
+        "summary": "Backend Usage Help",
+        "description": "Troubleshooting tips for connecting a frontend to this backend. Confirms base URL and lists key routes.",
+        "operationId": "backend_help_docs_backend_help_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
