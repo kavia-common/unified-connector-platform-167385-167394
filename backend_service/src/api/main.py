@@ -149,6 +149,35 @@ def create_app() -> FastAPI:
         """
         return {"message": "No WebSocket endpoints available at this time."}
 
+    @app.get(
+        "/docs/backend-help",
+        summary="Backend Usage Help",
+        description="Troubleshooting tips for connecting a frontend to this backend. Confirms base URL and lists key routes.",
+        tags=["Documentation"],
+    )
+    def backend_help():
+        """
+        Provide quick troubleshooting guidance for frontend integration:
+        - Confirms the expected base URL and port.
+        - Reminds about CORS origins configuration.
+        - Lists key routes used by the frontend.
+        """
+        settings = get_settings()
+        return {
+            "message": "Ensure your frontend targets the correct base URL.",
+            "expected_base_url": "http://localhost:3001",
+            "site_url": settings.SITE_URL,
+            "cors_allow_origins": settings.CORS_ALLOW_ORIGINS,
+            "key_routes": [
+                "/auth/api-key",
+                "/auth/oauth/init",
+                "/auth/oauth/callback",
+                "/connectors",
+                "/llm-proxy",
+                "/admin/registry",
+            ],
+        }
+
     # Replace default openapi generator to include custom metadata using a safe function
     def _custom_openapi() -> dict:
         """

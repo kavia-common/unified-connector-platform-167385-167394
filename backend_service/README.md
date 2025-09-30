@@ -16,6 +16,25 @@ Quick start:
 - Run: uvicorn src.api.main:app --host 0.0.0.0 --port 3001
 - Docs: http://localhost:3001/docs
 
+Backend base URL:
+- By default this service listens on http://localhost:3001
+- Ensure your frontend points to http://localhost:3001 for API calls (e.g., NEXT_PUBLIC_BACKEND_URL=http://localhost:3001).
+- A 404 Not Found from the frontend for POST /auth/api-key usually indicates the frontend is targeting the wrong port or path (e.g., 4000). Verify the base URL matches the running FastAPI server.
+
+CORS configuration:
+- CORS is enabled with CORSMiddleware and controlled via the CORS_ALLOW_ORIGINS environment variable (comma-separated list or "*" for all in development).
+- Set CORS_ALLOW_ORIGINS to your frontend origin(s), e.g., http://localhost:3000.
+
+Testing POST /auth/api-key:
+- Example curl:
+  curl -X POST "http://localhost:3001/auth/api-key" \
+    -H "Content-Type: application/json" \
+    -d '{"tenant_id":"t-1","provider":"jira","api_key":"secret","label":"primary"}'
+- You should receive 200 OK with a token_id. If you see 404, confirm:
+  1) The server is running on port 3001.
+  2) You used the correct path: /auth/api-key.
+  3) Any proxy in front is forwarding correctly.
+
 Notes:
 - Current implementation uses in-memory stores as stubs. Replace with a real database.
 - Rate limiting is in-memory and per-process; consider a distributed limiter for production.
